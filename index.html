@@ -102,15 +102,17 @@ function authView(msg=''){
    <button style="width:100%">${reg?'ანგარიშის შექმნა':'შესვლა'}</button><p class="err" role="alert">${esc(msg)}</p></form></div></div>`}
 function verifyView(msg=''){
   const c=S.cfg,v=S.v;stopPoll();
+  if(v.waiting){$('#root').innerHTML=`<div class="auth"><div class="card"><h1>ელოდება დამტკიცებას</h1><p class="mut" style="margin-top:6px">${esc(S.pEmail)}</p><div class="opt">ანგარიში დადასტურებულია ✅ ახლა ადმინმა უნდა დაგიმტკიცოს წვდომა. დამტკიცებისთანავე ეს გვერდი თავისით გაგრძელდება, ან შეგიძლია მოგვიანებით შეხვიდე.</div><button class="ghost sm" style="margin-top:12px" data-a="logout">უკან შესვლაზე</button></div></div>`;startPoll();return}
   $('#root').innerHTML=`<div class="auth"><div class="card"><h1>ანგარიშის დადასტურება</h1><p class="mut" style="margin-top:6px">${esc(S.pEmail)}</p>
-  ${!c.email&&!c.telegram?'<div class="opt">ავტომატური დადასტურება ჯერ ჩართული არ არის. ადმინი უნდა დაგიდასტუროს ანგარიში. ეს გვერდი თავისით განახლდება.</div>':''}
+  ${!c.email&&!c.telegram?'<div class="opt">ავტომატური დადასტურება ჯერ ჩართული არ არის. ანგარიშს ადმინი დაგიმტკიცებს. ეს გვერდი თავისით განახლდება.</div>':''}
   ${c.telegram?`<div class="opt"><h3>Telegram-ით</h3><p class="mut">დაასკანირე QR კოდი ან გახსენი ბმული და ბოტში დააჭირე Start.</p>
    ${v.tg?`<div class="qr" id="qrbox"></div><div><a href="${esc(v.tg)}" target="_blank" rel="noopener">გახსენი Telegram</a></div><p class="mut">ველოდები დადასტურებას…</p>`:'<button data-a="tgStart">QR კოდის გენერაცია</button>'}</div>`:''}
   ${c.email?`<div class="opt"><h3>ელფოსტით</h3>${v.sent?`<form data-form="code" class="row"><input name="code" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" placeholder="6-ციფრიანი კოდი" required autocomplete="one-time-code" class="grow"><button>დადასტურება</button></form>
    <button class="ghost sm" style="margin-top:10px" data-a="emailSend" ${v.cool>0?'disabled':''}>${v.cool>0?`თავიდან გაგზავნა (${v.cool} წმ)`:'კოდის თავიდან გაგზავნა'}</button>`:`<p class="mut">6-ციფრიან კოდს გამოგიგზავნით.</p><button data-a="emailSend">კოდის გაგზავნა</button>`}</div>`:''}
   <p class="err" role="alert" style="margin-top:12px">${esc(msg)}</p><button class="ghost sm" data-a="logout">უკან შესვლაზე</button></div></div>`;
   if(v.tg)qr($('#qrbox'),v.tg);
-  S.poll=setInterval(async()=>{try{const r=await api('/verify/status','GET',null,S.pending);if(r.verified){S.token=r.token;store.set('t',r.token);stopPoll();boot()}}catch(e){if(e.status===401){stopPoll();S.tab='login';authView('ვერიფიკაციის სესია ამოიწურა, შედი თავიდან')}}},3000)}
+  startPoll()}
+function startPoll(){stopPoll();S.poll=setInterval(async()=>{try{const r=await api('/verify/status','GET',null,S.pending);if(r.token){S.token=r.token;store.set('t',r.token);stopPoll();boot()}else if(r.verified&&!S.v.waiting){S.v.waiting=true;verifyView()}}catch(e){if(e.status===401){stopPoll();S.tab='login';authView('ვერიფიკაციის სესია ამოიწურა, შედი თავიდან')}}},3000)}
 function startVerify(res,email){S.pending=res.pending;S.cfg=res.methods||S.cfg;S.pEmail=email;S.v={};verifyView()}
 function cooldown(){S.v.cool=60;clearInterval(cooldown.t);cooldown.t=setInterval(()=>{S.v.cool--;if(S.v.cool<=0)clearInterval(cooldown.t);if($('[data-form=code]'))verifyView()},1000)}
 
@@ -128,7 +130,7 @@ function route(){
   if(!S.me)return;let pg=(location.hash.replace('#/','')||'dashboard');if(!pages[pg]||(pg==='users'&&!adm()))pg='dashboard';
   const nav=[['dashboard','დაფა'],['history','ისტორია'],...(adm()?[['users','მომხმარებლები']]:[]),['settings','პარამეტრები']];
   $('#root').innerHTML=`<div class="app"><aside><div class="brand"><span class="logo">დ</span>შემხსენებელი</div>
-   <nav aria-label="მთავარი მენიუ">${nav.map(([k,t])=>`<a href="#/${k}" class="${k===pg?'on':''}" ${k===pg?'aria-current="page"':''}>${t}</a>`).join('')}</nav>
+   <nav aria-label="მთავარი მენიუ">${nav.map(([k,t])=>`<a href="#/${k}" ${k==='users'&&S.users.some(u=>u.approved===false)?`title="ელოდება დამტკიცებას: ${S.users.filter(u=>u.approved===false).length}"`:''} class="${k===pg?'on':''}" ${k===pg?'aria-current="page"':''}>${t}${k==='users'&&S.users.some(u=>u.approved===false)?` <span class="badge warn">${S.users.filter(u=>u.approved===false).length}</span>`:''}</a>`).join('')}</nav>
    <div class="side-end"><button class="ghost sm" data-a="toggleTheme">${isDark()?'ღია თემა':'მუქი თემა'}</button>
    <div class="me"><b>${esc(S.me.name)}</b><br><span class="mut">${esc(S.me.email||'')}</span></div><button class="ghost sm" data-a="logout">გასვლა</button></div></aside>
    <main id="page"></main></div>`;pages[pg]()}
@@ -193,7 +195,7 @@ function docDialog(d){
   <div><label for="t">დოკუმენტის სახელი</label><input id="t" name="title" required value="${esc(e.title)}" style="width:100%"></div>
   <div><label for="dd">გადაგზავნის ვადა (თარიღი და დრო)</label><input id="dd" name="deadline" type="datetime-local" required value="${toInput(e.deadline)}">${e.id?'':'<p class="mut" style="margin-top:6px">ნაგულისხმევი ვადა: ახლიდან 10 დღე. შეგიძლია შეცვალო.</p>'}</div>
   <fieldset style="border:0;padding:0;margin:0"><label>როდის შეახსენოს</label><div class="checks">${REM.map(([n,t])=>`<label><input type="checkbox" name="rd" value="${n}" ${e.remind_mins.includes(n)?'checked':''}>${t}</label>`).join('')}</div></fieldset>
-  <fieldset style="border:0;padding:0;margin:0"><label>ვის მიუვიდეს შეხსენება (საკმარისია ერთმა მონიშნულმა დაადასტუროს შესრულება)</label><div class="checks">${S.users.map(u=>`<label><input type="checkbox" name="u" value="${u.id}" ${e.user_ids.includes(u.id)?'checked':''}>${esc(u.name)}</label>`).join('')||'<span class="mut">მომხმარებლები ჯერ არ არის</span>'}</div></fieldset>
+  <fieldset style="border:0;padding:0;margin:0"><label>ვის მიუვიდეს შეხსენება (საკმარისია ერთმა მონიშნულმა დაადასტუროს შესრულება)</label><div class="checks">${S.users.filter(u=>u.approved!==false&&u.verified!==false).map(u=>`<label><input type="checkbox" name="u" value="${u.id}" ${e.user_ids.includes(u.id)?'checked':''}>${esc(u.name)}</label>`).join('')||'<span class="mut">მომხმარებლები ჯერ არ არის</span>'}</div></fieldset>
   ${e.id?'':'<label style="display:flex;gap:8px;align-items:center;color:var(--ink);font-size:14px;margin:0"><input type="checkbox" name="notify" style="min-height:0;width:auto">შექმნისთანავე გაუგზავნე შეტყობინება მონიშნულებს</label>'}
   <div class="row" style="justify-content:flex-end"><button type="button" class="ghost" data-a="closeDlg">გაუქმება</button><button>${e.id?'შენახვა':'დამატება'}</button></div></form>`;$('#dlg').showModal()}
 function ppDialog(d){
@@ -207,9 +209,9 @@ function usersPage(){
   $('#page').innerHTML=`<div class="head"><div><h1>მომხმარებლები</h1><p class="mut">${S.users.length} მომხმარებელი</p></div><button data-a="newUser">+ მომხმარებელი</button></div>
   <div class="card table-wrap"><table><thead><tr><th>სახელი</th><th>ელფოსტა</th><th>სტატუსი</th><th>Telegram</th><th></th></tr></thead><tbody>
   ${S.users.map(u=>`<tr><td><b>${esc(u.name)}</b></td><td>${esc(u.email||'—')}</td>
-  <td><span class="badge ${u.verified?'good':'warn'}">${u.verified?'დადასტურებული':'ელოდება დადასტურებას'}</span></td>
+  <td><span class="badge ${u.approved?'good':'warn'}">${u.approved?'აქტიური':u.verified?'ელოდება დამტკიცებას':'ელოდება ვერიფიკაციას'}</span></td>
   <td>${u.tg?'<span class="badge good">დაკავშირებულია</span>':(S.me.bot?`<a href="https://t.me/${esc(S.me.bot)}?start=${esc(u.link_code)}" target="_blank" rel="noopener">ბმული</a>`:'<span class="mut">—</span>')}</td>
-  <td><div class="row" style="justify-content:flex-end">${u.verified?'':`<button class="sm" data-a="approve" data-id="${u.id}">დადასტურება</button>`}<button class="danger sm" data-a="delUser" data-id="${u.id}">წაშლა</button></div></td></tr>`).join('')||'<tr><td colspan="5" class="mut">მომხმარებელი ჯერ არ არის</td></tr>'}</tbody></table></div>`}
+  <td><div class="row" style="justify-content:flex-end">${u.approved?'':`<button class="sm" data-a="approve" data-id="${u.id}">დამტკიცება</button>`}<button class="danger sm" data-a="delUser" data-id="${u.id}">წაშლა</button></div></td></tr>`).join('')||'<tr><td colspan="5" class="mut">მომხმარებელი ჯერ არ არის</td></tr>'}</tbody></table></div>`}
 function userDialog(){
   $('#dlg').innerHTML=`<form data-form="user" class="stack" autocomplete="off"><h2>ახალი მომხმარებელი</h2>
   <div><label for="un">სახელი</label><input id="un" name="name" required autocomplete="off" style="width:100%"></div>
@@ -235,7 +237,7 @@ function settingsPage(){
    <div class="row"><input class="grow" name="host" placeholder="SMTP სერვერი" value="${esc(v.SMTP_HOST||'')}" aria-label="SMTP სერვერი"><input name="port" style="width:90px" placeholder="პორტი" value="${esc(v.SMTP_PORT||'587')}" aria-label="პორტი"></div>
    <div class="row" style="margin-top:8px"><input class="grow" name="user" placeholder="მომხმარებელი" value="${esc(v.SMTP_USER||'')}" aria-label="SMTP მომხმარებელი" autocomplete="off"><input class="grow" name="pass" type="password" autocomplete="new-password" placeholder="${h.SMTP_PASS?'პაროლი შენახულია':'პაროლი / App Password'}" aria-label="SMTP პაროლი"></div>
    <input name="from" style="width:100%;margin-top:8px" placeholder="გამგზავნი (From)" value="${esc(v.SMTP_FROM||'')}" aria-label="From"></div>
-   <p class="mut">რეგისტრაციისას დადასტურება მიდის მეილზე (თუ SMTP გამართულია) და/ან Telegram-ით QR კოდით (თუ ბოტია მიერთებული). თუ ორივე გამორთულია, ახალ მომხმარებელს ადმინი ადასტურებს.</p>
+   <p class="mut">რეგისტრაციისას დადასტურება მიდის მეილზე (თუ SMTP გამართულია) და/ან Telegram-ით QR კოდით (თუ ბოტია მიერთებული). ვერიფიკაციის შემდეგ ახალ მომხმარებელს დამატებით ადმინი ამტკიცებს (მომხმარებლების გვერდი).</p>
    <div class="row"><button>შენახვა</button><button type="button" class="ghost" data-a="testMail">სატესტო მეილი</button><button type="button" class="ghost" data-a="runNow">შეხსენებების გაშვება ახლა</button></div></form></div>`:''}`;
   if($('#qrme'))qr($('#qrme'),link)}
 
@@ -251,7 +253,7 @@ const A={
   stat:d=>{S.f.status=d.v;dashboard()},resetF:()=>{S.f={q:'',scope:'',status:'active',person:'',sort:'deadline'};dashboard()},
   delDoc:guard(async d=>{if(confirm('წავშალო დავალება?')){await api('/documents/'+d.id,'DELETE');await load();route()}}),
   delUser:guard(async d=>{if(confirm('წავშალო მომხმარებელი?')){await api('/users/'+d.id,'DELETE');await load();route()}}),
-  approve:guard(async d=>{await api(`/users/${d.id}/verify`,'POST');await load();route();toast('დადასტურდა')}),
+  approve:guard(async d=>{await api(`/users/${d.id}/approve`,'POST');await load();route();toast('დამტკიცდა')}),
   emailSend:guard(async()=>{await api('/verify/email/send','POST',{},S.pending);S.v.sent=true;cooldown();verifyView();toast('კოდი გაიგზავნა')}),
   tgStart:guard(async()=>{S.v.tg=(await api('/verify/telegram/start','POST',{},S.pending)).link;verifyView()}),
   testMail:guard(async()=>{const x=await api('/settings/test-email','POST',{});toast('გაიგზავნა: '+x.to)}),
@@ -262,7 +264,7 @@ document.addEventListener('change',guard(async e=>{const id=e.target.dataset?.do
 const forms={
   login:async f=>{try{const r=await api('/login','POST',{email:f.email,password:f.password});S.token=r.token;store.set('t',r.token);boot()}catch(e){if(e.data?.pending)startVerify(e.data,f.email);else authView(e.message)}},
   register:async f=>{try{startVerify(await api('/register','POST',f),f.email)}catch(e){authView(e.message)}},
-  code:async f=>{try{const r=await api('/verify/email/confirm','POST',{code:f.code},S.pending);S.token=r.token;store.set('t',r.token);boot()}catch(e){verifyView(e.message)}},
+  code:async f=>{try{const r=await api('/verify/email/confirm','POST',{code:f.code},S.pending);if(r.token){S.token=r.token;store.set('t',r.token);boot()}else{S.v.waiting=true;verifyView()}}catch(e){verifyView(e.message)}},
   doc:async(f,fd,el)=>{const id=el.dataset.id,b={title:f.title,deadline:new Date(f.deadline).toISOString(),remind_mins:fd.getAll('rd').map(Number),user_ids:fd.getAll('u').map(Number),notify:!id&&fd.has('notify')};
     const res=await api(id?'/documents/'+id:'/documents',id?'PUT':'POST',b);$('#dlg').close();await load();route();sendSummary(res.results)},
   postpone:async(f,_,el)=>{await api(`/documents/${el.dataset.id}/deadline`,'PUT',{deadline:new Date(f.deadline).toISOString()});$('#dlg').close();await load();route();toast('ვადა შეიცვალა')},
