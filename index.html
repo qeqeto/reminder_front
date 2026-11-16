@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="ka">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>დედლაინების შემხსენებელი</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Georgian:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f3f5f7;--ink:#14212b;--mut:#5d6b76;--line:#d5dce1;--card:#fff;--acc:#0b5d7a;--warn:#c8791a}
+@media (prefers-color-scheme:dark){:root{--bg:#10171c;--ink:#e6edf1;--mut:#93a3ae;--line:#26333c;--card:#17212832;--acc:#58b5d4;--warn:#e8a34d}}
+*{box-sizing:border-box}
+body{margin:0;font:16px/1.5 "Noto Sans Georgian",system-ui,sans-serif;background:var(--bg);color:var(--ink)}
+main{max-width:980px;margin:0 auto;padding:24px 16px 64px}
+h1{font-size:28px;font-weight:800;margin:0 0 4px}
+h2{font-size:18px;margin:32px 0 12px}
+p.sub{color:var(--mut);margin:0 0 20px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+input,button,select{font:inherit;padding:9px 12px;border:1px solid var(--line);border-radius:6px;background:var(--card);color:var(--ink)}
+button{cursor:pointer;background:var(--acc);color:#fff;border-color:var(--acc);font-weight:600}
+button.ghost{background:transparent;color:var(--ink);border-color:var(--line)}
+button.del{background:transparent;color:#b3261e;border-color:var(--line)}
+:focus-visible{outline:3px solid var(--warn);outline-offset:2px}
+.doc{display:grid;grid-template-columns:1fr auto;gap:8px 16px;padding:14px 16px;background:var(--card);border:1px solid var(--line);border-left:5px solid var(--acc);border-radius:6px;margin-bottom:10px}
+.doc.soon{border-left-color:var(--warn)}.doc.past{opacity:.55}
+.doc b{font-size:17px}.days{font-weight:800;font-size:20px;text-align:right}
+.chips span{display:inline-block;background:var(--bg);border:1px solid var(--line);border-radius:99px;padding:1px 10px;margin:2px 4px 0 0;font-size:14px}
+.user{display:flex;justify-content:space-between;gap:8px;padding:10px 0;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.tag{font-size:13px;color:var(--mut)}
+.checks{display:flex;flex-wrap:wrap;gap:6px 14px;margin:8px 0;width:100%}
+.checks label{display:flex;gap:6px;align-items:center}
+.card{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:16px}
+#err{color:#b3261e;min-height:24px}
+</style>
+</head>
+<body><main id="app"></main>
+<script src="config.js"></script>
+<script>
+const $=s=>document.querySelector(s);
+let token=localStorage.getItem('t'),users=[],docs=[],me={},st={values:{},has:{}},edit=null;
+async function api(p,m='GET',b){
+  const r=await fetch(API_URL+'/api'+p,{method:m,headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},body:b&&JSON.stringify(b)});
+  const j=await r.json();if(!r.ok){if(r.status===401&&token){token=null;localStorage.removeItem('t');render()}throw new Error(j.error||'შეცდომა')}return j}
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const left=d=>Math.round((new Date(d+'T00:00:00')-new Date(new Date().toDateString()))/864e5);
+
+function login(){
+  $('#app').innerHTML=`<h1>შესვლა</h1><p class="sub">ადმინისთვის და მომხმარებლებისთვის</p>
+  <div class="card row"><input id="e" placeholder="ელფოსტა" type="email"><input id="p" placeholder="პაროლი" type="password"><button id="go">შესვლა</button></div><p id="err"></p>`;
+  $('#go').onclick=async()=>{try{const r=await api('/login','POST',{email:$('#e').value,password:$('#p').value});token=r.token;localStorage.setItem('t',token);render()}catch(e){$('#err').textContent=e.message}}}
+
+async function render(){
+  if(!token)return login();
+  try{me=await api('/me');if(me.role==='admin')st=await api('/settings');users=(await api('/users')).users;docs=await api('/documents')}catch(e){return login()}
+  const adm=me.role==='admin',can=d=>adm||d.created_by===me.id;
+  const e=edit||{id:null,title:'',deadline:'',remind_days:[7,3,1,0],user_ids:[]};
+  $('#app').innerHTML=`
+  <div class="row" style="justify-content:space-between"><div><h1>დედლაინების შემხსენებელი</h1><p class="sub">${esc(me.name||'')} · დოკუმენტები, ვადები და ადრესატები</p></div>
+  <div class="row">${adm?'<button class="ghost" id="run">შეხსენებების გაშვება ახლა</button>':''}<button class="ghost" id="out">გასვლა</button></div></div>
+  <p id="err"></p>
+  ${!adm&&!me.tg&&me.bot?`<div class="card" style="margin-bottom:8px">Telegram-ზე შეხსენებების მისაღებად <a href="https://t.me/${me.bot}?start=${me.link_code}" target="_blank">დააკავშირე ბოტი</a>.</div>`:''}
+  <h2>${e.id?'დოკუმენტის რედაქტირება':'ახალი დოკუმენტი'}</h2>
+  <div class="card"><div class="row">
+    <input id="t" placeholder="დოკუმენტის სახელი" value="${esc(e.title)}" style="flex:1;min-width:200px">
+    <input id="d" type="date" value="${e.deadline}">
+    <input id="r" value="${e.remind_days.join(',')}" title="რამდენი დღით ადრე შეახსენოს" style="width:130px"></div>
+    <p class="tag" style="margin:6px 0 0">მესამე ველი: რამდენი დღით ადრე შეახსენოს (0 = დედლაინის დღეს)</p>
+    <div class="checks">${users.length?users.map(u=>`<label><input type="checkbox" value="${u.id}" ${e.user_ids.includes(u.id)?'checked':''}>${esc(u.name)}</label>`).join(''):'<span class="tag">ჯერ დაამატე მომხმარებლები</span>'}</div>
+    <button id="save">${e.id?'შენახვა':'დამატება'}</button> ${e.id?'<button class="ghost" id="cancel">გაუქმება</button>':''}</div>
+  <h2>დოკუმენტები</h2>
+  ${docs.length?docs.map(d=>{const l=left(d.deadline);return `<div class="doc ${l<0?'past':l<=3?'soon':''}"><div><b>${esc(d.title)}</b><div class="tag">${d.deadline} · შეხსენება: ${d.remind_days.join(', ')} დღით ადრე</div>
+  <div class="chips">${d.user_ids.map(i=>`<span>${esc(users.find(u=>u.id===i)?.name||'?')}</span>`).join('')||'<span class="tag">არავინ არ არის მონიშნული</span>'}</div></div>
+  <div><div class="days">${l<0?'ვადა გავიდა':l===0?'დღეს':l+' დღე'}</div><div class="row" style="justify-content:flex-end;margin-top:6px">${can(d)?`<button class="ghost" data-e="${d.id}">შეცვლა</button><button class="del" data-x="${d.id}">წაშლა</button>`:''}</div></div></div>`}).join(''):'<p class="sub">ჯერ დოკუმენტი არ არის დამატებული.</p>'}
+  ${adm?`<h2>მომხმარებლები</h2>
+  <div class="card row"><input id="un" placeholder="სახელი"><input id="ue" type="email" placeholder="ელფოსტა"><input id="up" type="password" placeholder="პაროლი (შესასვლელად)"><button id="ua">მომხმარებლის დამატება</button></div>
+  ${users.map(u=>`<div class="user"><div><b>${esc(u.name)}</b> <span class="tag">${esc(u.email||'ელფოსტის გარეშე')} · Telegram: ${u.tg?'დაკავშირებულია':'არ არის დაკავშირებული'}</span></div>
+  <div class="row">${!u.tg&&me.bot?`<a class="tag" href="https://t.me/${me.bot}?start=${u.link_code}" target="_blank">Telegram-ის ბმული</a>`:''}<button class="del" data-u="${u.id}">წაშლა</button></div></div>`).join('')}
+  <h2>ინტეგრაციები</h2>
+  <div class="card"><b>Telegram ბოტი</b>
+    <div class="row" style="margin:8px 0 16px"><input id="s_tok" type="password" autocomplete="off" style="flex:1;min-width:240px" placeholder="${st.has.TELEGRAM_BOT_TOKEN?'ტოკენი შენახულია (შესაცვლელად ჩაწერე ახალი)':'ბოტის ტოკენი (@BotFather)'}"></div>
+    ${st.values.TELEGRAM_BOT_USERNAME?`<p class="tag" style="margin:-8px 0 16px">ბოტი: @${esc(st.values.TELEGRAM_BOT_USERNAME)}</p>`:''}
+    <b>ელფოსტა (SMTP)</b>
+    <div class="row" style="margin:8px 0">
+      <input id="s_host" placeholder="SMTP სერვერი" value="${esc(st.values.SMTP_HOST||'')}">
+      <input id="s_port" placeholder="პორტი" style="width:90px" value="${esc(st.values.SMTP_PORT||'587')}">
+      <input id="s_user" placeholder="მომხმარებელი" value="${esc(st.values.SMTP_USER||'')}">
+      <input id="s_pass" type="password" autocomplete="off" placeholder="${st.has.SMTP_PASS?'პაროლი შენახულია':'პაროლი / App Password'}">
+      <input id="s_from" placeholder="გამგზავნი (From)" value="${esc(st.values.SMTP_FROM||'')}"></div>
+    <div class="row"><button id="ss">პარამეტრების შენახვა</button><button class="ghost" id="stest">სატესტო მეილის გაგზავნა</button></div></div>`:''}`;
+  const guard=f=>async()=>{try{await f();render()}catch(x){$('#err').textContent=x.message}};
+  $('#out').onclick=()=>{token=null;localStorage.removeItem('t');render()};
+  if($('#run'))$('#run').onclick=guard(async()=>{const r=await api('/run-reminders','POST');alert(r.log.join('\n')||'გასაგზავნი არაფერია')});
+  $('#save').onclick=guard(async()=>{const b={title:$('#t').value,deadline:$('#d').value,remind_days:$('#r').value.split(',').map(Number).filter(n=>!isNaN(n)),user_ids:[...document.querySelectorAll('.checks input:checked')].map(c=>+c.value)};
+    if(!b.title||!b.deadline)throw new Error('შეავსე სახელი და თარიღი');await api(e.id?'/documents/'+e.id:'/documents',e.id?'PUT':'POST',b);edit=null});
+  if($('#cancel'))$('#cancel').onclick=()=>{edit=null;render()};
+  if($('#ss'))$('#ss').onclick=guard(async()=>{await api('/settings','PUT',{TELEGRAM_BOT_TOKEN:$('#s_tok').value,SMTP_HOST:$('#s_host').value,SMTP_PORT:$('#s_port').value,SMTP_USER:$('#s_user').value,SMTP_PASS:$('#s_pass').value,SMTP_FROM:$('#s_from').value});alert('შენახულია')});
+  if($('#stest'))$('#stest').onclick=guard(async()=>{const x=await api('/settings/test-email','POST',{});alert('გაიგზავნა: '+x.to)});
+  if($('#ua'))$('#ua').onclick=guard(async()=>{if(!$('#un').value)throw new Error('ჩაწერე სახელი');await api('/users','POST',{name:$('#un').value,email:$('#ue').value,password:$('#up').value})});
+  document.querySelectorAll('[data-e]').forEach(b=>b.onclick=()=>{edit=docs.find(d=>d.id==b.dataset.e);render();scrollTo(0,0)});
+  document.querySelectorAll('[data-x]').forEach(b=>b.onclick=guard(async()=>{if(confirm('წავშალო დოკუმენტი?'))await api('/documents/'+b.dataset.x,'DELETE')}));
+  document.querySelectorAll('[data-u]').forEach(b=>b.onclick=guard(async()=>{if(confirm('წავშალო მომხმარებელი?'))await api('/users/'+b.dataset.u,'DELETE')}));
+}
+render();
+</script></body></html>
