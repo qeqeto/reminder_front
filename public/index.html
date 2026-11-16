@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="ka">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>APA Reminder</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script>if(window.Telegram&&Telegram.WebApp&&Telegram.WebApp.initData)location.replace("tg.html")</script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Georgian:wght@400;600;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+:root{--bg:#f4f6f8;--panel:#fff;--ink:#14212b;--mut:#5f6f7c;--line:#dbe2e8;--acc:#0e7490;--acc-ink:#fff;--soft:#e6f2f6;--warn:#b45f06;--warn-bg:#fdf0dc;--bad:#b3261e;--bad-bg:#fbe4e2;--good:#18794e;--good-bg:#def3e8}
+:root[data-theme=dark]{--bg:#0d141a;--panel:#141e26;--ink:#e8eff4;--mut:#93a5b4;--line:#263644;--acc:#45b8d6;--acc-ink:#05151c;--soft:#16303b;--warn:#f0b35c;--warn-bg:#352a15;--bad:#ff8c85;--bad-bg:#3a1f22;--good:#6dd4a0;--good-bg:#163325}
+@media (prefers-color-scheme:dark){:root:not([data-theme]){--bg:#0d141a;--panel:#141e26;--ink:#e8eff4;--mut:#93a5b4;--line:#263644;--acc:#45b8d6;--acc-ink:#05151c;--soft:#16303b;--warn:#f0b35c;--warn-bg:#352a15;--bad:#ff8c85;--bad-bg:#3a1f22;--good:#6dd4a0;--good-bg:#163325}}
+*{box-sizing:border-box}
+body{margin:0;font:15px/1.55 "Noto Sans Georgian",system-ui,sans-serif;background:var(--bg);color:var(--ink)}
+h1{font-size:24px;margin:0;font-weight:800}h2{font-size:17px;margin:0 0 12px}h3{font-size:15px;margin:0 0 6px}p{margin:0 0 10px}
+input,select,button{font:inherit;min-height:42px;padding:8px 12px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--ink)}
+input:focus,select:focus{outline:2px solid var(--acc);outline-offset:0}
+button{cursor:pointer;background:var(--acc);color:var(--acc-ink);border-color:var(--acc);font-weight:600}
+button:focus-visible,a:focus-visible,summary:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+button.ghost{background:transparent;color:var(--ink);border-color:var(--line)}button.danger{background:transparent;color:var(--bad);border-color:var(--line)}
+button:disabled{opacity:.5;cursor:not-allowed}button.sm{min-height:34px;padding:4px 10px;font-size:14px}
+a{color:var(--acc)}label{display:block;font-size:13px;color:var(--mut);margin-bottom:4px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}.grow{flex:1;min-width:160px}.mut{color:var(--mut);font-size:13px}.stack>*+*{margin-top:12px}
+.app{display:grid;grid-template-columns:232px 1fr;min-height:100vh}
+aside{background:var(--panel);border-right:1px solid var(--line);padding:18px 14px;display:flex;flex-direction:column;gap:6px;position:sticky;top:0;height:100vh}
+.brand{display:flex;gap:10px;align-items:center;font-weight:800;padding:4px 8px 16px}.logo{width:34px;height:34px;border-radius:9px;background:var(--acc);color:var(--acc-ink);display:grid;place-items:center;font-weight:800}
+nav a{display:block;padding:9px 12px;border-radius:8px;color:var(--ink);text-decoration:none;font-weight:600}nav a:hover{background:var(--soft)}nav a.on{background:var(--soft);color:var(--acc)}
+.side-end{margin-top:auto;display:flex;flex-direction:column;gap:8px}.me{padding:8px;border-top:1px solid var(--line);font-size:13px}
+main{padding:28px clamp(16px,4vw,40px) 64px;max-width:1100px;width:100%}
+.head{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:20px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px;margin-bottom:16px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px}
+.stat{text-align:left;background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:12px;padding:14px 16px;min-height:0}
+.stat b{display:block;font-size:28px;line-height:1.1}.stat span{color:var(--mut);font-size:13px;font-weight:400}.stat.on{border-color:var(--acc);box-shadow:inset 0 0 0 1px var(--acc)}
+.filters{display:grid;grid-template-columns:2fr repeat(4,1fr) auto;gap:8px;margin-bottom:16px}.filters.h{grid-template-columns:2fr 1fr 1fr}
+.doc{display:grid;grid-template-columns:auto 1fr auto;gap:6px 14px;align-items:start;background:var(--panel);border:1px solid var(--line);border-left:4px solid var(--acc);border-radius:12px;padding:14px 16px;margin-bottom:10px}
+.doc.soon{border-left-color:var(--warn)}.doc.late{border-left-color:var(--bad)}.doc.done{border-left-color:var(--good);opacity:.65}.doc.done b{text-decoration:line-through}.doc.hist{border-left-color:var(--good)}
+.doc input[type=checkbox]{width:22px;height:22px;min-height:0;margin-top:2px;accent-color:var(--acc)}
+.chip{display:inline-block;background:var(--soft);border-radius:99px;padding:1px 10px;margin:4px 6px 0 0;font-size:13px}
+.badge{display:inline-block;border-radius:99px;padding:2px 10px;font-size:13px;font-weight:600;background:var(--soft);color:var(--acc);white-space:nowrap}
+.badge.warn{background:var(--warn-bg);color:var(--warn)}.badge.bad{background:var(--bad-bg);color:var(--bad)}.badge.good{background:var(--good-bg);color:var(--good)}
+.side{text-align:right}.side .acts{margin-top:8px;display:flex;flex-wrap:wrap;gap:6px;justify-content:flex-end}.doc:not(.hist){grid-template-columns:1fr auto}
+table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:10px 8px;border-bottom:1px solid var(--line);vertical-align:middle}th{font-size:13px;color:var(--mut);font-weight:600}
+.table-wrap{overflow-x:auto}.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}.seg button{border:0;border-radius:0;background:transparent;color:var(--ink)}.seg button.on{background:var(--acc);color:var(--acc-ink)}
+.auth{min-height:100vh;display:grid;place-items:center;padding:20px}.auth .card{width:min(440px,100%)}
+.tabs{display:flex;gap:4px;margin-bottom:16px}.tabs button{flex:1;background:transparent;color:var(--mut);border-color:var(--line)}.tabs button.on{background:var(--soft);color:var(--acc);border-color:var(--acc)}
+.opt{border:1px solid var(--line);border-radius:10px;padding:14px;margin-top:12px}.qr{display:inline-block;background:#fff;padding:10px;border-radius:10px;margin:8px 0}
+.err{color:var(--bad);min-height:22px;font-size:14px}
+dialog{border:1px solid var(--line);border-radius:14px;background:var(--panel);color:var(--ink);padding:22px;width:min(560px,94vw)}dialog::backdrop{background:#0008}
+.checks{display:flex;flex-wrap:wrap;gap:6px 16px}.checks label{display:flex;gap:6px;align-items:center;color:var(--ink);font-size:14px;margin:0}.checks input{min-height:0;width:auto}
+#toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 18px;border-radius:10px;display:none;z-index:99}
+@media(max-width:860px){.app{grid-template-columns:1fr}aside{position:static;height:auto;flex-direction:row;flex-wrap:wrap;align-items:center;padding:10px}.brand{padding:0}nav{display:flex;gap:4px;flex-wrap:wrap}.side-end{margin:0 0 0 auto;flex-direction:row;align-items:center}.me{display:none}.filters{grid-template-columns:1fr 1fr}.filters.h{grid-template-columns:1fr}.filters .full{grid-column:1/-1}.doc{grid-template-columns:auto 1fr}.doc:not(.hist){grid-template-columns:1fr}.doc:not(.hist) .side{grid-column:1}.side{grid-column:2;text-align:left}.side .acts{justify-content:flex-start}}
+@media (prefers-reduced-motion:no-preference){.stat,button{transition:border-color .15s,background .15s}}
+</style>
+</head>
+<body><div id="root"></div><div id="toast" role="status"></div><dialog id="dlg"></dialog>
+<script src="config.js"></script>
+<script>
+const $=(s,r=document)=>r.querySelector(s),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const store={get:k=>{try{return localStorage.getItem(k)}catch{return null}},set:(k,v)=>{try{localStorage.setItem(k,v)}catch{}},del:k=>{try{localStorage.removeItem(k)}catch{}}};
+const BASE=(window.API_URL||(location.hostname==='localhost'?'http://localhost:3000':'')).replace(/\/+$/,'');
+const S={token:store.get('t'),me:null,users:[],docs:[],cfg:{},st:{values:{},has:{}},pending:null,pEmail:'',tab:'login',v:{},f:{q:'',scope:'',status:'active',person:'',sort:'deadline'},h:{q:'',scope:'',person:''},poll:null};
+
+async function api(p,m='GET',b,tok=S.token){
+  if(!BASE)throw new Error('API_URL არ არის დაყენებული: frontend სერვისის Variables-ში ჩაწერე backend-ის ბმული და გაუშვი Redeploy');
+  let r;try{r=await fetch(BASE+'/api'+p,{method:m,headers:{'Content-Type':'application/json',...(tok?{Authorization:'Bearer '+tok}:{})},body:b&&JSON.stringify(b)})}
+  catch{throw new Error('სერვერთან კავშირი ვერ მოხერხდა ('+BASE+'). შეამოწმე API_URL და backend-ის სტატუსი')}
+  const j=await r.json().catch(()=>({}));
+  if(!r.ok){if(r.status===401&&tok&&tok===S.token)logout(false);throw Object.assign(new Error(j.error||'შეცდომა'),{status:r.status,data:j})}
+  return j}
+function toast(t){const e=$('#toast');e.textContent=t;e.style.display='block';clearTimeout(toast.t);toast.t=setTimeout(()=>e.style.display='none',3200)}
+const guard=f=>async(...a)=>{try{await f(...a)}catch(e){toast(e.message)}};
+
+/* თემა */
+const theme=()=>store.get('theme')||'system';
+function applyTheme(){const t=theme(),el=document.documentElement;t==='system'?el.removeAttribute('data-theme'):el.dataset.theme=t}
+function setTheme(t){store.set('theme',t);applyTheme();if(S.me)route()}
+const isDark=()=>theme()==='dark'||(theme()==='system'&&matchMedia('(prefers-color-scheme:dark)').matches);
+
+/* დახმარე ფუნქციები */
+const ms=d=>new Date(d)-Date.now(),pad=n=>String(n).padStart(2,'0');
+const fmt=d=>{const x=new Date(d);return `${pad(x.getDate())}.${pad(x.getMonth()+1)}.${x.getFullYear()} ${pad(x.getHours())}:${pad(x.getMinutes())}`};
+const toInput=d=>{const x=new Date(d);return `${x.getFullYear()}-${pad(x.getMonth()+1)}-${pad(x.getDate())}T${pad(x.getHours())}:${pad(x.getMinutes())}`};
+const span=v=>{const m=Math.abs(Math.round(v/6e4)),d=Math.floor(m/1440),h=Math.floor(m%1440/60),n=m%60;return d?`${d} დღე${h?' '+h+' სთ':''}`:h?`${h} სთ${n?' '+n+' წთ':''}`:`${n} წთ`};
+const sendSummary=res=>{if(!res)return;const ok=res.filter(x=>x.ok).length,bad=res.filter(x=>!x.ok);toast(`გაიგზავნა: ${ok}`+(bad.length?`, ვერ გაიგზავნა: ${bad.length} (${bad[0].name}: ${bad[0].error})`:''))};
+const daysLabel=d=>ms(d)<0?`გადაცილებულია ${span(ms(d))}`:`დარჩა ${span(ms(d))}`;
+const adm=()=>S.me?.role==='admin';
+function qr(el,text){el.innerHTML='';if(window.QRCode)new QRCode(el,{text,width:176,height:176,colorDark:'#000000',colorLight:'#ffffff'});else el.textContent=text}
+function logout(go=true){store.del('t');S.token=null;S.me=null;stopPoll();if(go)S.tab='login';boot()}
+function stopPoll(){clearInterval(S.poll);S.poll=null}
+
+/* ავტორიზაცია */
+function authView(msg=''){
+  stopPoll();const reg=S.tab==='register';
+  $('#root').innerHTML=`<div class="auth"><div class="card">
+  <div class="brand" style="padding-bottom:12px"><span class="logo">A</span>APA Reminder</div>
+  <div class="tabs"><button class="${reg?'':'on'}" data-a="tab" data-v="login">შესვლა</button><button class="${reg?'on':''}" data-a="tab" data-v="register">რეგისტრაცია</button></div>
+  <form data-form="${reg?'register':'login'}" class="stack">
+   ${reg?'<div><label for="n">სახელი</label><input id="n" name="name" required autocomplete="name" style="width:100%"></div>':''}
+   <div><label for="e">ელფოსტა</label><input id="e" name="email" type="email" required autocomplete="email" style="width:100%"></div>
+   <div><label for="p">პაროლი${reg?' (მინიმუმ 8 სიმბოლო)':''}</label><input id="p" name="password" type="password" required minlength="${reg?8:1}" autocomplete="${reg?'new-password':'current-password'}" style="width:100%"></div>
+   <button style="width:100%">${reg?'ანგარიშის შექმნა':'შესვლა'}</button><p class="err" role="alert">${esc(msg)}</p></form></div></div>`}
+function verifyView(msg=''){
+  const c=S.cfg,v=S.v;stopPoll();
+  if(v.waiting){$('#root').innerHTML=`<div class="auth"><div class="card"><h1>ელოდება დამტკიცებას</h1><p class="mut" style="margin-top:6px">${esc(S.pEmail)}</p><div class="opt">ანგარიში დადასტურებულია ✅ ახლა ადმინმა უნდა დაგიმტკიცოს წვდომა. დამტკიცებისთანავე ეს გვერდი თავისით გაგრძელდება, ან შეგიძლია მოგვიანებით შეხვიდე.</div><button class="ghost sm" style="margin-top:12px" data-a="logout">უკან შესვლაზე</button></div></div>`;startPoll();return}
+  $('#root').innerHTML=`<div class="auth"><div class="card"><h1>ანგარიშის დადასტურება</h1><p class="mut" style="margin-top:6px">${esc(S.pEmail)}</p>
+  ${!c.email&&!c.telegram?'<div class="opt">ავტომატური დადასტურება ჯერ ჩართული არ არის. ანგარიშს ადმინი დაგიმტკიცებს. ეს გვერდი თავისით განახლდება.</div>':''}
+  ${c.telegram?`<div class="opt"><h3>Telegram-ით</h3><p class="mut">დაასკანირე QR კოდი ან გახსენი ბმული და ბოტში დააჭირე Start.</p>
+   ${v.tg?`<div class="qr" id="qrbox"></div><div><a href="${esc(v.tg)}" target="_blank" rel="noopener">გახსენი Telegram</a></div><p class="mut">ველოდები დადასტურებას…</p>`:'<button data-a="tgStart">QR კოდის გენერაცია</button>'}</div>`:''}
+  ${c.email?`<div class="opt"><h3>ელფოსტით</h3>${v.sent?`<form data-form="code" class="row"><input name="code" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" placeholder="6-ციფრიანი კოდი" required autocomplete="one-time-code" class="grow"><button>დადასტურება</button></form>
+   <button class="ghost sm" style="margin-top:10px" data-a="emailSend" ${v.cool>0?'disabled':''}>${v.cool>0?`თავიდან გაგზავნა (${v.cool} წმ)`:'კოდის თავიდან გაგზავნა'}</button>`:`<p class="mut">6-ციფრიან კოდს გამოგიგზავნით.</p><button data-a="emailSend">კოდის გაგზავნა</button>`}</div>`:''}
+  <p class="err" role="alert" style="margin-top:12px">${esc(msg)}</p><button class="ghost sm" data-a="logout">უკან შესვლაზე</button></div></div>`;
+  if(v.tg)qr($('#qrbox'),v.tg);
+  startPoll()}
+function startPoll(){stopPoll();S.poll=setInterval(async()=>{try{const r=await api('/verify/status','GET',null,S.pending);if(r.token){S.token=r.token;store.set('t',r.token);stopPoll();boot()}else if(r.verified&&!S.v.waiting){S.v.waiting=true;verifyView()}}catch(e){if(e.status===401){stopPoll();S.tab='login';authView('ვერიფიკაციის სესია ამოიწურა, შედი თავიდან')}}},3000)}
+function startVerify(res,email){S.pending=res.pending;S.cfg=res.methods||S.cfg;S.pEmail=email;S.v={};verifyView()}
+function cooldown(){S.v.cool=60;clearInterval(cooldown.t);cooldown.t=setInterval(()=>{S.v.cool--;if(S.v.cool<=0)clearInterval(cooldown.t);if($('[data-form=code]'))verifyView()},1000)}
+
+/* მონაცემები და გვერდები */
+async function boot(){
+  applyTheme();S.cfg=await api('/public/config').catch(()=>({}));
+  if(!S.token)return authView();
+  try{S.me=await api('/me');await load()}catch(e){if(e.status===401)return authView();return authView(e.message)}
+  route()}
+async function load(){
+  const [u,d]=await Promise.all([api('/users'),api('/documents')]);S.users=u.users;S.docs=d;
+  if(adm())S.st=await api('/settings')}
+const pages={dashboard:()=>dashboard(),history:()=>historyPage(),users:()=>usersPage(),settings:()=>settingsPage()};
+function route(){
+  if(!S.me)return;let pg=(location.hash.replace('#/','')||'dashboard');if(!pages[pg]||(pg==='users'&&!adm()))pg='dashboard';
+  const nav=[['dashboard','დაფა'],['history','ისტორია'],...(adm()?[['users','მომხმარებლები']]:[]),['settings','პარამეტრები']];
+  $('#root').innerHTML=`<div class="app"><aside><div class="brand"><span class="logo">A</span>APA Reminder</div>
+   <nav aria-label="მთავარი მენიუ">${nav.map(([k,t])=>`<a href="#/${k}" ${k==='users'&&S.users.some(u=>u.approved===false)?`title="ელოდება დამტკიცებას: ${S.users.filter(u=>u.approved===false).length}"`:''} class="${k===pg?'on':''}" ${k===pg?'aria-current="page"':''}>${t}${k==='users'&&S.users.some(u=>u.approved===false)?` <span class="badge warn">${S.users.filter(u=>u.approved===false).length}</span>`:''}</a>`).join('')}</nav>
+   <div class="side-end"><button class="ghost sm" data-a="toggleTheme">${isDark()?'ღია თემა':'მუქი თემა'}</button>
+   <div class="me"><b>${esc(S.me.name)}</b><br><span class="mut">${esc(S.me.email||'')}</span></div><button class="ghost sm" data-a="logout">გასვლა</button></div></aside>
+   <main id="page"></main></div>`;pages[pg]()}
+window.addEventListener('hashchange',route);
+
+/* დაფა */
+function baseDocs(f=S.f){
+  const me=S.me.id,q=f.q.trim().toLowerCase(),sc=f.scope||(adm()?'all':'mine');
+  return S.docs.filter(d=>{const c=d.created_by===me,a=d.user_ids.includes(me);
+    if(sc==='mine'&&!(c||a)||sc==='created'&&!c||sc==='assigned'&&!a)return false;
+    if(f.person&&!d.user_ids.includes(+f.person))return false;
+    if(q&&!(d.title.toLowerCase().includes(q)||d.user_ids.some(i=>(S.users.find(u=>u.id===i)?.name||'').toLowerCase().includes(q))))return false;return true})}
+const statusOf=d=>{const m=ms(d.deadline);return d.done?'done':m<0?'overdue':m<=7*864e5?'soon':'later'};
+function dashboard(){
+  const f=S.f,sc=f.scope||(adm()?'all':'mine');
+  $('#page').innerHTML=`<div class="head"><div><h1>დაფა</h1><p class="mut">დავალებები, ვადები და ადრესატები</p></div><button data-a="newDoc">+ ახალი დავალება</button></div>
+  <div class="stats" id="stats"></div>
+  <div class="filters" role="search">
+   <input class="full" type="search" placeholder="ძებნა სახელით ან ადამიანით" aria-label="ძებნა" data-f="q" value="${esc(f.q)}">
+   <select data-f="scope" aria-label="ჩემი დავალებები"><option value="all" ${sc==='all'?'selected':''}>${adm()?'ყველა დავალება':'ყველა ჩემი'}</option>${adm()?'':''}<option value="mine" ${sc==='mine'?'selected':''}>ჩემი (შექმნილი ან მონიშნული)</option><option value="created" ${sc==='created'?'selected':''}>მე შევქმენი</option><option value="assigned" ${sc==='assigned'?'selected':''}>მე ვარ მონიშნული</option></select>
+   <select data-f="status" aria-label="სტატუსი">${[['active','აქტიური'],['soon','7 დღეში'],['overdue','ვადაგასული'],['all','ყველა აქტიური']].map(([k,t])=>`<option value="${k}" ${f.status===k?'selected':''}>${t}</option>`).join('')}</select>
+   <select data-f="person" aria-label="ადამიანი"><option value="">ყველა ადამიანი</option>${S.users.map(u=>`<option value="${u.id}" ${f.person==u.id?'selected':''}>${esc(u.name)}</option>`).join('')}</select>
+   <select data-f="sort" aria-label="დალაგება">${[['deadline','ვადით'],['new','ახალი პირველი'],['title','სახელით']].map(([k,t])=>`<option value="${k}" ${f.sort===k?'selected':''}>${t}</option>`).join('')}</select>
+   <button class="ghost" data-a="resetF">გასუფთავება</button></div><div id="list"></div>`;
+  renderList()}
+function renderList(){
+  const f=S.f,base=baseDocs(),cnt={active:0,soon:0,overdue:0,done:0};
+  base.forEach(d=>{const s=statusOf(d);if(s==='done')cnt.done++;else{cnt.active+=s!=='overdue';if(s==='overdue')cnt.overdue++;if(s==='soon')cnt.soon++}});
+  const tiles=[['active','აქტიური',cnt.active],['soon','7 დღეში',cnt.soon],['overdue','ვადაგასული',cnt.overdue]];
+  $('#stats').innerHTML=tiles.map(([k,t,n])=>`<button class="stat ${f.status===k?'on':''}" data-a="stat" data-v="${k}"><b>${n}</b><span>${t}</span></button>`).join('')+`<button class="stat" data-a="goHist"><b>${cnt.done}</b><span>ისტორიაში (შესრულებული) →</span></button>`;
+  let r=base.filter(d=>{const s=statusOf(d);return s!=='done'&&(f.status==='all'||(f.status==='active'?s!=='overdue':f.status==='soon'?s==='soon':s==='overdue'))});
+  r.sort((a,b)=>f.sort==='title'?a.title.localeCompare(b.title,'ka'):f.sort==='new'?b.id-a.id:a.deadline.localeCompare(b.deadline));
+  const can=d=>adm()||d.created_by===S.me.id,act=d=>can(d)||d.user_ids.includes(S.me.id);
+  $('#list').innerHTML=r.length?r.map(d=>{const s=statusOf(d),tone=s==='done'?'good':s==='overdue'?'bad':s==='soon'?'warn':'';
+   return `<article class="doc ${s==='overdue'?'late':s}">
+   <div><b>${esc(d.title)}</b><div class="mut">ვადა: <b>${fmt(d.deadline)}</b>${d.postponed_count?` · გადადებულია ×${d.postponed_count}`:''} · დაამატა ${esc(d.creator_name||(d.created_by===0?'ადმინმა':'—'))}${d.done&&d.done_by_name?` · შეასრულა ${esc(d.done_by_name)} (${fmt(d.done_at)})`:''}</div>
+   <div>${d.user_ids.map(i=>`<span class="chip">${esc(S.users.find(u=>u.id===i)?.name||'?')}</span>`).join('')||'<span class="mut">არავინ არ არის მონიშნული</span>'}</div></div>
+   <div class="side"><span class="badge ${tone}">${d.done?'შესრულებულია':daysLabel(d.deadline)}</span><div class="acts">${act(d)?`<button class="sm" data-a="done" data-id="${d.id}" title="ერთი მონიშნული პირის დადასტურებაც საკმარისია">შესრულებულია</button>`:''}${act(d)&&!d.done?`<button class="ghost sm" data-a="notify" data-id="${d.id}">გაგზავნა ახლავე</button>`:''}${act(d)&&!d.done?`<button class="ghost sm" data-a="postpone" data-id="${d.id}">გადადება</button>`:''}${can(d)?`<button class="ghost sm" data-a="editDoc" data-id="${d.id}">შეცვლა</button><button class="danger sm" data-a="delDoc" data-id="${d.id}">წაშლა</button>`:''}</div></div></article>`}).join('')
+   :`<div class="card" style="text-align:center"><p><b>დავალება ვერ მოიძებნა</b></p><p class="mut">შეცვალე ფილტრები ან დაამატე ახალი დავალება.</p><button data-a="newDoc">+ ახალი დავალება</button></div>`}
+
+const REM=[[10080,'7 დღით ადრე'],[4320,'3 დღით ადრე'],[1440,'1 დღით ადრე'],[120,'2 საათით ადრე'],[60,'1 საათით ადრე'],[0,'ვადის დადგომისას']];
+function historyPage(){
+  const h=S.h,sc=h.scope||(adm()?'all':'mine');
+  $('#page').innerHTML=`<div class="head"><div><h1>ისტორია</h1><p class="mut">შესრულებული დავალებები. საჭიროების შემთხვევაში აღადგინე.</p></div></div>
+  <div class="filters h" role="search"><input type="search" placeholder="ძებნა სახელით ან ადამიანით" aria-label="ძებნა" data-h="q" value="${esc(h.q)}">
+  <select data-h="scope" aria-label="ჩემი დავალებები"><option value="all" ${sc==='all'?'selected':''}>${adm()?'ყველა':'ყველა ჩემი'}</option><option value="mine" ${sc==='mine'?'selected':''}>ჩემი (შექმნილი ან მონიშნული)</option><option value="created" ${sc==='created'?'selected':''}>მე შევქმენი</option><option value="assigned" ${sc==='assigned'?'selected':''}>მე ვარ მონიშნული</option></select>
+  <select data-h="person" aria-label="ადამიანი"><option value="">ყველა ადამიანი</option>${S.users.map(u=>`<option value="${u.id}" ${h.person==u.id?'selected':''}>${esc(u.name)}</option>`).join('')}</select></div><div id="hlist"></div>`;
+  renderHist()}
+function renderHist(){
+  const r=baseDocs(S.h).filter(d=>d.done).sort((a,b)=>new Date(b.done_at||0)-new Date(a.done_at||0)),can=d=>adm()||d.created_by===S.me.id,act=d=>can(d)||d.user_ids.includes(S.me.id);
+  $('#hlist').innerHTML=r.length?r.map(d=>{const late=d.done_at&&new Date(d.done_at)>new Date(d.deadline);
+   return `<article class="doc hist"><span aria-hidden="true" style="font-size:20px;color:var(--good)">✓</span>
+   <div><b>${esc(d.title)}</b><div class="mut">ვადა: ${fmt(d.deadline)} · შეასრულა <b>${esc(d.done_by_name||'—')}</b>${d.done_at?` (${fmt(d.done_at)})`:''}${d.postponed_count?` · გადადებულია ×${d.postponed_count}`:''}</div>
+   <div>${d.user_ids.map(i=>`<span class="chip">${esc(S.users.find(u=>u.id===i)?.name||'?')}</span>`).join('')}</div></div>
+   <div class="side"><span class="badge ${late?'bad':'good'}">${late?'დაგვიანებით: '+span(new Date(d.done_at)-new Date(d.deadline)):'დროულად'}</span>
+   <div class="acts">${act(d)?`<button class="sm" data-a="restore" data-id="${d.id}">აღდგენა</button>`:''}${can(d)?`<button class="danger sm" data-a="delDoc" data-id="${d.id}">წაშლა</button>`:''}</div></div></article>`}).join('')
+   :`<div class="card" style="text-align:center"><p><b>ისტორია ცარიელია</b></p><p class="mut">შესრულებულად მონიშნული დავალებები აქ გამოჩნდება.</p></div>`}
+
+function docDialog(d){
+  const e=d||{id:null,title:'',deadline:new Date(Date.now()+10*864e5).toISOString(),remind_mins:[4320,1440,60,0],user_ids:adm()?[]:[S.me.id]};
+  $('#dlg').innerHTML=`<form data-form="doc" data-id="${e.id||''}" class="stack"><h2>${e.id?'დავალების შეცვლა':'ახალი დავალება'}</h2>
+  <div><label for="t">დოკუმენტის სახელი</label><input id="t" name="title" required value="${esc(e.title)}" style="width:100%"></div>
+  <div><label for="dd">გადაგზავნის ვადა (თარიღი და დრო)</label><input id="dd" name="deadline" type="datetime-local" required value="${toInput(e.deadline)}">${e.id?'':'<p class="mut" style="margin-top:6px">ნაგულისხმევი ვადა: ახლიდან 10 დღე. შეგიძლია შეცვალო.</p>'}</div>
+  <fieldset style="border:0;padding:0;margin:0"><label>როდის შეახსენოს</label><div class="checks">${REM.map(([n,t])=>`<label><input type="checkbox" name="rd" value="${n}" ${e.remind_mins.includes(n)?'checked':''}>${t}</label>`).join('')}</div></fieldset>
+  <fieldset style="border:0;padding:0;margin:0"><label>ვის მიუვიდეს შეხსენება (საკმარისია ერთმა მონიშნულმა დაადასტუროს შესრულება)</label><div class="checks">${S.users.filter(u=>u.approved!==false&&u.verified!==false).map(u=>`<label><input type="checkbox" name="u" value="${u.id}" ${e.user_ids.includes(u.id)?'checked':''}>${esc(u.name)}</label>`).join('')||'<span class="mut">მომხმარებლები ჯერ არ არის</span>'}</div></fieldset>
+  ${e.id?'':'<label style="display:flex;gap:8px;align-items:center;color:var(--ink);font-size:14px;margin:0"><input type="checkbox" name="notify" style="min-height:0;width:auto">შექმნისთანავე გაუგზავნე შეტყობინება მონიშნულებს</label>'}
+  <div class="row" style="justify-content:flex-end"><button type="button" class="ghost" data-a="closeDlg">გაუქმება</button><button>${e.id?'შენახვა':'დამატება'}</button></div></form>`;$('#dlg').showModal()}
+function ppDialog(d){
+  $('#dlg').innerHTML=`<div class="stack"><h2>დავალების გადადება</h2><p><b>${esc(d.title)}</b><br><span class="mut">ახლანდელი ვადა: ${fmt(d.deadline)}</span></p>
+  <div class="row">${[[60,'+1 საათი'],[1440,'+1 დღე'],[4320,'+3 დღე'],[10080,'+1 კვირა']].map(([m,t])=>`<button class="ghost" data-a="pp" data-id="${d.id}" data-m="${m}">${t}</button>`).join('')}</div>
+  <form data-form="postpone" data-id="${d.id}" class="stack"><div><label for="nd">ან აირჩიე ახალი თარიღი და დრო</label><input id="nd" name="deadline" type="datetime-local" required value="${toInput(d.deadline)}"></div>
+  <div class="row" style="justify-content:flex-end"><button type="button" class="ghost" data-a="closeDlg">დახურვა</button><button>ვადის შეცვლა</button></div></form></div>`;$('#dlg').showModal()}
+
+/* მომხმარებლები (ადმინი) */
+function usersPage(){
+  $('#page').innerHTML=`<div class="head"><div><h1>მომხმარებლები</h1><p class="mut">${S.users.length} მომხმარებელი</p></div><button data-a="newUser">+ მომხმარებელი</button></div>
+  <div class="card table-wrap"><table><thead><tr><th>სახელი</th><th>ელფოსტა</th><th>სტატუსი</th><th>Telegram</th><th></th></tr></thead><tbody>
+  ${S.users.map(u=>`<tr><td><b>${esc(u.name)}</b></td><td>${esc(u.email||'—')}</td>
+  <td><span class="badge ${u.approved?'good':'warn'}">${u.approved?'აქტიური':u.verified?'ელოდება დამტკიცებას':'ელოდება ვერიფიკაციას'}</span></td>
+  <td>${u.tg?'<span class="badge good">დაკავშირებულია</span>':(S.me.bot?`<a href="https://t.me/${esc(S.me.bot)}?start=${esc(u.link_code)}" target="_blank" rel="noopener">ბმული</a>`:'<span class="mut">—</span>')}</td>
+  <td><div class="row" style="justify-content:flex-end">${u.approved?'':`<button class="sm" data-a="approve" data-id="${u.id}">დამტკიცება</button>`}<button class="danger sm" data-a="delUser" data-id="${u.id}">წაშლა</button></div></td></tr>`).join('')||'<tr><td colspan="5" class="mut">მომხმარებელი ჯერ არ არის</td></tr>'}</tbody></table></div>`}
+function userDialog(){
+  $('#dlg').innerHTML=`<form data-form="user" class="stack" autocomplete="off"><h2>ახალი მომხმარებელი</h2>
+  <div><label for="un">სახელი</label><input id="un" name="name" required autocomplete="off" style="width:100%"></div>
+  <div><label for="ue">ელფოსტა</label><input id="ue" name="email" type="email" required autocomplete="off" style="width:100%"></div>
+  <div><label for="up">პაროლი (მინიმუმ 8 სიმბოლო)</label><input id="up" name="password" type="password" minlength="8" required autocomplete="new-password" style="width:100%"></div>
+  <p class="mut">ადმინის მიერ დამატებული მომხმარებელი დადასტურებულად ითვლება.</p>
+  <div class="row" style="justify-content:flex-end"><button type="button" class="ghost" data-a="closeDlg">გაუქმება</button><button>დამატება</button></div></form>`;$('#dlg').showModal()}
+
+/* პარამეტრები */
+function settingsPage(){
+  const m=S.me,v=S.st.values,h=S.st.has,link=m.bot&&m.link_code?`https://t.me/${m.bot}?start=${m.link_code}`:'';
+  $('#page').innerHTML=`<div class="head"><h1>პარამეტრები</h1></div>
+  <div class="card"><h2>გარეგნობა</h2><div class="seg" role="group" aria-label="თემა">${[['system','სისტემის'],['light','ღია'],['dark','მუქი']].map(([k,t])=>`<button class="${theme()===k?'on':''}" data-a="theme" data-v="${k}">${t}</button>`).join('')}</div></div>
+  <div class="card"><h2>პროფილი</h2><p><b>${esc(m.name)}</b> <span class="mut">${esc(m.email||'')}</span></p>
+  ${adm()?'<p class="mut">ადმინის ანგარიში. პაროლი Railway Variables-ში იცვლება.</p>':`
+   <div class="row" style="align-items:flex-start;gap:24px"><div><h3>Telegram</h3>${m.tg?'<span class="badge good">დაკავშირებულია</span>':link?`<p class="mut">დაასკანირე და დააჭირე Start, რომ შეხსენებები Telegram-ზეც მიიღო.</p><div class="qr" id="qrme"></div><div><a href="${esc(link)}" target="_blank" rel="noopener">გახსენი Telegram</a></div>`:'<span class="mut">ბოტი ჯერ არ არის გამართული</span>'}</div>
+   <form data-form="pw" class="stack grow" autocomplete="off"><h3>პაროლის შეცვლა</h3><input name="old" type="password" placeholder="ძველი პაროლი" autocomplete="current-password"><input name="next" type="password" minlength="8" placeholder="ახალი პაროლი (8+)" required autocomplete="new-password"><div><button class="sm">შენახვა</button></div></form></div>`}</div>
+  ${adm()?`<div class="card"><h2>ინტეგრაციები</h2><form data-form="settings" class="stack" autocomplete="off">
+   <div><h3>Telegram ბოტი ${h.TELEGRAM_BOT_TOKEN?'<span class="badge good">მიერთებულია</span>':'<span class="badge warn">არ არის მიერთებული</span>'}</h3>
+   <input name="tok" type="password" autocomplete="off" style="width:100%" placeholder="${h.TELEGRAM_BOT_TOKEN?'ტოკენი შენახულია (შესაცვლელად ჩაწერე ახალი)':'ბოტის ტოკენი (@BotFather)'}" aria-label="ბოტის ტოკენი">
+   ${v.TELEGRAM_BOT_USERNAME?`<p class="mut" style="margin-top:6px">ბოტი: @${esc(v.TELEGRAM_BOT_USERNAME)}</p>`:''}</div>
+   <div><h3>ელფოსტა (SMTP) ${h.SMTP_PASS&&v.SMTP_HOST?'<span class="badge good">გამართულია</span>':'<span class="badge warn">არ არის გამართული</span>'}</h3>
+   <div class="row"><input class="grow" name="host" placeholder="SMTP სერვერი" value="${esc(v.SMTP_HOST||'')}" aria-label="SMTP სერვერი"><input name="port" style="width:90px" placeholder="პორტი" value="${esc(v.SMTP_PORT||'587')}" aria-label="პორტი"></div>
+   <div class="row" style="margin-top:8px"><input class="grow" name="user" placeholder="მომხმარებელი" value="${esc(v.SMTP_USER||'')}" aria-label="SMTP მომხმარებელი" autocomplete="off"><input class="grow" name="pass" type="password" autocomplete="new-password" placeholder="${h.SMTP_PASS?'პაროლი შენახულია':'პაროლი / App Password'}" aria-label="SMTP პაროლი"></div>
+   <input name="from" style="width:100%;margin-top:8px" placeholder="გამგზავნი (From)" value="${esc(v.SMTP_FROM||'')}" aria-label="From"></div>
+   <p class="mut">რეგისტრაციისას დადასტურება მიდის მეილზე (თუ SMTP გამართულია) და/ან Telegram-ით QR კოდით (თუ ბოტია მიერთებული). ვერიფიკაციის შემდეგ ახალ მომხმარებელს დამატებით ადმინი ამტკიცებს (მომხმარებლების გვერდი).</p>
+   <div class="row"><button>შენახვა</button><button type="button" class="ghost" data-a="testMail">სატესტო მეილი</button><button type="button" class="ghost" data-a="runNow">შეხსენებების გაშვება ახლა</button></div></form></div>`:''}`;
+  if($('#qrme'))qr($('#qrme'),link)}
+
+/* მოქმედებები */
+const A={
+  tab:d=>{S.tab=d.v;authView()},logout:()=>logout(),toggleTheme:()=>setTheme(isDark()?'light':'dark'),theme:d=>setTheme(d.v),
+  closeDlg:()=>$('#dlg').close(),newDoc:()=>docDialog(),newUser:()=>userDialog(),
+  editDoc:d=>docDialog(S.docs.find(x=>x.id==d.id)),done:guard(async d=>{await api(`/documents/${d.id}/done`,'PUT',{done:true});await load();renderList();toast('გადავიდა ისტორიაში')}),
+  goHist:()=>{location.hash='#/history'},
+  restore:guard(async d=>{await api(`/documents/${d.id}/done`,'PUT',{done:false});await load();const x=S.docs.find(y=>y.id==d.id);location.hash='#/dashboard';route();toast('დავალება აღდგა');if(x&&ms(x.deadline)<0){ppDialog(x);toast('ვადა გასულია, აირჩიე ახალი ვადა')}}),
+  notify:guard(async d=>{sendSummary((await api(`/documents/${d.id}/notify`,'POST',{})).results)}),postpone:d=>ppDialog(S.docs.find(x=>x.id==d.id)),
+  pp:guard(async d=>{const x=S.docs.find(y=>y.id==d.id);await api(`/documents/${d.id}/deadline`,'PUT',{deadline:new Date(Math.max(new Date(x.deadline).getTime(),Date.now())+d.m*6e4).toISOString()});$('#dlg').close();await load();route();toast('ვადა გადაიდო')}),
+  stat:d=>{S.f.status=d.v;dashboard()},resetF:()=>{S.f={q:'',scope:'',status:'active',person:'',sort:'deadline'};dashboard()},
+  delDoc:guard(async d=>{if(confirm('წავშალო დავალება?')){await api('/documents/'+d.id,'DELETE');await load();route()}}),
+  delUser:guard(async d=>{if(confirm('წავშალო მომხმარებელი?')){await api('/users/'+d.id,'DELETE');await load();route()}}),
+  approve:guard(async d=>{await api(`/users/${d.id}/approve`,'POST');await load();route();toast('დამტკიცდა')}),
+  emailSend:guard(async()=>{await api('/verify/email/send','POST',{},S.pending);S.v.sent=true;cooldown();verifyView();toast('კოდი გაიგზავნა')}),
+  tgStart:guard(async()=>{S.v.tg=(await api('/verify/telegram/start','POST',{},S.pending)).link;verifyView()}),
+  testMail:guard(async()=>{const x=await api('/settings/test-email','POST',{});toast('გაიგზავნა: '+x.to)}),
+  runNow:guard(async()=>{const r=await api('/run-reminders','POST');alert(r.log.join('\n')||'გასაგზავნი არაფერია')})};
+document.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(b&&A[b.dataset.a])A[b.dataset.a](b.dataset)});
+document.addEventListener('input',e=>{const k=e.target.dataset?.f;if(k){S.f[k]=e.target.value;if(k==='q')renderList();else dashboard()}const h=e.target.dataset?.h;if(h){S.h[h]=e.target.value;if(h==='q')renderHist();else historyPage()}});
+document.addEventListener('change',guard(async e=>{const id=e.target.dataset?.done;if(id){const on=e.target.checked;await api(`/documents/${id}/done`,'PUT',{done:on});await load();renderList();toast(on?'გადავიდა ისტორიაში':'დავალება აღდგა')}}));
+const forms={
+  login:async f=>{try{const r=await api('/login','POST',{email:f.email,password:f.password});S.token=r.token;store.set('t',r.token);boot()}catch(e){if(e.data?.pending)startVerify(e.data,f.email);else authView(e.message)}},
+  register:async f=>{try{startVerify(await api('/register','POST',f),f.email)}catch(e){authView(e.message)}},
+  code:async f=>{try{const r=await api('/verify/email/confirm','POST',{code:f.code},S.pending);if(r.token){S.token=r.token;store.set('t',r.token);boot()}else{S.v.waiting=true;verifyView()}}catch(e){verifyView(e.message)}},
+  doc:async(f,fd,el)=>{const id=el.dataset.id,b={title:f.title,deadline:new Date(f.deadline).toISOString(),remind_mins:fd.getAll('rd').map(Number),user_ids:fd.getAll('u').map(Number),notify:!id&&fd.has('notify')};
+    const res=await api(id?'/documents/'+id:'/documents',id?'PUT':'POST',b);$('#dlg').close();await load();route();sendSummary(res.results)},
+  postpone:async(f,_,el)=>{await api(`/documents/${el.dataset.id}/deadline`,'PUT',{deadline:new Date(f.deadline).toISOString()});$('#dlg').close();await load();route();toast('ვადა შეიცვალა')},
+  user:async f=>{await api('/users','POST',f);$('#dlg').close();await load();route()},
+  pw:async(f,_,el)=>{await api('/me/password','POST',{old:f.old,next:f.next});el.reset();toast('პაროლი შეიცვალა')},
+  settings:async f=>{await api('/settings','PUT',{TELEGRAM_BOT_TOKEN:f.tok,SMTP_HOST:f.host,SMTP_PORT:f.port,SMTP_USER:f.user,SMTP_PASS:f.pass,SMTP_FROM:f.from});await load();route();toast('შენახულია')}};
+document.addEventListener('submit',e=>{const el=e.target.closest('[data-form]');if(!el)return;e.preventDefault();const fd=new FormData(el);
+  guard(forms[el.dataset.form])(Object.fromEntries(fd),fd,el)});
+boot();
+</script></body></html>
