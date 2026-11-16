@@ -1,4 +1,4 @@
-# reminder-frontend
+# APA Reminder: frontend
 ადმინის/მომხმარებლის პანელი. Root Directory არ სჭირდება.
 
 ## Railway

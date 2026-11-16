@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>დედლაინების შემხსენებელი</title>
+<title>APA Reminder</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Georgian:wght@400;600;800&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <style>
@@ -93,7 +93,7 @@ function stopPoll(){clearInterval(S.poll);S.poll=null}
 function authView(msg=''){
   stopPoll();const reg=S.tab==='register';
   $('#root').innerHTML=`<div class="auth"><div class="card">
-  <div class="brand" style="padding-bottom:12px"><span class="logo">დ</span>დედლაინების შემხსენებელი</div>
+  <div class="brand" style="padding-bottom:12px"><span class="logo">A</span>APA Reminder</div>
   <div class="tabs"><button class="${reg?'':'on'}" data-a="tab" data-v="login">შესვლა</button><button class="${reg?'on':''}" data-a="tab" data-v="register">რეგისტრაცია</button></div>
   <form data-form="${reg?'register':'login'}" class="stack">
    ${reg?'<div><label for="n">სახელი</label><input id="n" name="name" required autocomplete="name" style="width:100%"></div>':''}
@@ -129,7 +129,7 @@ const pages={dashboard:()=>dashboard(),history:()=>historyPage(),users:()=>users
 function route(){
   if(!S.me)return;let pg=(location.hash.replace('#/','')||'dashboard');if(!pages[pg]||(pg==='users'&&!adm()))pg='dashboard';
   const nav=[['dashboard','დაფა'],['history','ისტორია'],...(adm()?[['users','მომხმარებლები']]:[]),['settings','პარამეტრები']];
-  $('#root').innerHTML=`<div class="app"><aside><div class="brand"><span class="logo">დ</span>შემხსენებელი</div>
+  $('#root').innerHTML=`<div class="app"><aside><div class="brand"><span class="logo">A</span>APA Reminder</div>
    <nav aria-label="მთავარი მენიუ">${nav.map(([k,t])=>`<a href="#/${k}" ${k==='users'&&S.users.some(u=>u.approved===false)?`title="ელოდება დამტკიცებას: ${S.users.filter(u=>u.approved===false).length}"`:''} class="${k===pg?'on':''}" ${k===pg?'aria-current="page"':''}>${t}${k==='users'&&S.users.some(u=>u.approved===false)?` <span class="badge warn">${S.users.filter(u=>u.approved===false).length}</span>`:''}</a>`).join('')}</nav>
    <div class="side-end"><button class="ghost sm" data-a="toggleTheme">${isDark()?'ღია თემა':'მუქი თემა'}</button>
    <div class="me"><b>${esc(S.me.name)}</b><br><span class="mut">${esc(S.me.email||'')}</span></div><button class="ghost sm" data-a="logout">გასვლა</button></div></aside>
