@@ -39,7 +39,7 @@ main{padding:28px clamp(16px,4vw,40px) 64px;max-width:1100px;width:100%}
 .chip{display:inline-block;background:var(--soft);border-radius:99px;padding:1px 10px;margin:4px 6px 0 0;font-size:13px}
 .badge{display:inline-block;border-radius:99px;padding:2px 10px;font-size:13px;font-weight:600;background:var(--soft);color:var(--acc);white-space:nowrap}
 .badge.warn{background:var(--warn-bg);color:var(--warn)}.badge.bad{background:var(--bad-bg);color:var(--bad)}.badge.good{background:var(--good-bg);color:var(--good)}
-.side{text-align:right}.side .acts{margin-top:8px;display:flex;gap:6px;justify-content:flex-end}
+.side{text-align:right}.side .acts{margin-top:8px;display:flex;flex-wrap:wrap;gap:6px;justify-content:flex-end}.doc:not(.hist){grid-template-columns:1fr auto}
 table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:10px 8px;border-bottom:1px solid var(--line);vertical-align:middle}th{font-size:13px;color:var(--mut);font-weight:600}
 .table-wrap{overflow-x:auto}.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}.seg button{border:0;border-radius:0;background:transparent;color:var(--ink)}.seg button.on{background:var(--acc);color:var(--acc-ink)}
 .auth{min-height:100vh;display:grid;place-items:center;padding:20px}.auth .card{width:min(440px,100%)}
@@ -49,7 +49,7 @@ table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:10px 8px
 dialog{border:1px solid var(--line);border-radius:14px;background:var(--panel);color:var(--ink);padding:22px;width:min(560px,94vw)}dialog::backdrop{background:#0008}
 .checks{display:flex;flex-wrap:wrap;gap:6px 16px}.checks label{display:flex;gap:6px;align-items:center;color:var(--ink);font-size:14px;margin:0}.checks input{min-height:0;width:auto}
 #toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 18px;border-radius:10px;display:none;z-index:99}
-@media(max-width:860px){.app{grid-template-columns:1fr}aside{position:static;height:auto;flex-direction:row;flex-wrap:wrap;align-items:center;padding:10px}.brand{padding:0}nav{display:flex;gap:4px;flex-wrap:wrap}.side-end{margin:0 0 0 auto;flex-direction:row;align-items:center}.me{display:none}.filters{grid-template-columns:1fr 1fr}.filters.h{grid-template-columns:1fr}.filters .full{grid-column:1/-1}.doc{grid-template-columns:auto 1fr}.side{grid-column:2;text-align:left}.side .acts{justify-content:flex-start}}
+@media(max-width:860px){.app{grid-template-columns:1fr}aside{position:static;height:auto;flex-direction:row;flex-wrap:wrap;align-items:center;padding:10px}.brand{padding:0}nav{display:flex;gap:4px;flex-wrap:wrap}.side-end{margin:0 0 0 auto;flex-direction:row;align-items:center}.me{display:none}.filters{grid-template-columns:1fr 1fr}.filters.h{grid-template-columns:1fr}.filters .full{grid-column:1/-1}.doc{grid-template-columns:auto 1fr}.doc:not(.hist){grid-template-columns:1fr}.doc:not(.hist) .side{grid-column:1}.side{grid-column:2;text-align:left}.side .acts{justify-content:flex-start}}
 @media (prefers-reduced-motion:no-preference){.stat,button{transition:border-color .15s,background .15s}}
 </style>
 </head>
@@ -163,10 +163,10 @@ function renderList(){
   r.sort((a,b)=>f.sort==='title'?a.title.localeCompare(b.title,'ka'):f.sort==='new'?b.id-a.id:a.deadline.localeCompare(b.deadline));
   const can=d=>adm()||d.created_by===S.me.id,act=d=>can(d)||d.user_ids.includes(S.me.id);
   $('#list').innerHTML=r.length?r.map(d=>{const s=statusOf(d),tone=s==='done'?'good':s==='overdue'?'bad':s==='soon'?'warn':'';
-   return `<article class="doc ${s==='overdue'?'late':s}"><input type="checkbox" data-done="${d.id}" ${d.done?'checked':''} ${act(d)?'':'disabled'} title="${act(d)?'ერთი მონიშნული პირის დადასტურებაც საკმარისია':'მხოლოდ მონიშნულ პირს შეუძლია'}" aria-label="შესრულებულია: ${esc(d.title)}">
+   return `<article class="doc ${s==='overdue'?'late':s}">
    <div><b>${esc(d.title)}</b><div class="mut">ვადა: <b>${fmt(d.deadline)}</b>${d.postponed_count?` · გადადებულია ×${d.postponed_count}`:''} · დაამატა ${esc(d.creator_name||(d.created_by===0?'ადმინმა':'—'))}${d.done&&d.done_by_name?` · შეასრულა ${esc(d.done_by_name)} (${fmt(d.done_at)})`:''}</div>
    <div>${d.user_ids.map(i=>`<span class="chip">${esc(S.users.find(u=>u.id===i)?.name||'?')}</span>`).join('')||'<span class="mut">არავინ არ არის მონიშნული</span>'}</div></div>
-   <div class="side"><span class="badge ${tone}">${d.done?'შესრულებულია':daysLabel(d.deadline)}</span><div class="acts">${act(d)&&!d.done?`<button class="ghost sm" data-a="notify" data-id="${d.id}">გაგზავნა ახლავე</button>`:''}${act(d)&&!d.done?`<button class="ghost sm" data-a="postpone" data-id="${d.id}">გადადება</button>`:''}${can(d)?`<button class="ghost sm" data-a="editDoc" data-id="${d.id}">შეცვლა</button><button class="danger sm" data-a="delDoc" data-id="${d.id}">წაშლა</button>`:''}</div></div></article>`}).join('')
+   <div class="side"><span class="badge ${tone}">${d.done?'შესრულებულია':daysLabel(d.deadline)}</span><div class="acts">${act(d)?`<button class="sm" data-a="done" data-id="${d.id}" title="ერთი მონიშნული პირის დადასტურებაც საკმარისია">შესრულებულია</button>`:''}${act(d)&&!d.done?`<button class="ghost sm" data-a="notify" data-id="${d.id}">გაგზავნა ახლავე</button>`:''}${act(d)&&!d.done?`<button class="ghost sm" data-a="postpone" data-id="${d.id}">გადადება</button>`:''}${can(d)?`<button class="ghost sm" data-a="editDoc" data-id="${d.id}">შეცვლა</button><button class="danger sm" data-a="delDoc" data-id="${d.id}">წაშლა</button>`:''}</div></div></article>`}).join('')
    :`<div class="card" style="text-align:center"><p><b>დავალება ვერ მოიძებნა</b></p><p class="mut">შეცვალე ფილტრები ან დაამატე ახალი დავალება.</p><button data-a="newDoc">+ ახალი დავალება</button></div>`}
 
 const REM=[[10080,'7 დღით ადრე'],[4320,'3 დღით ადრე'],[1440,'1 დღით ადრე'],[120,'2 საათით ადრე'],[60,'1 საათით ადრე'],[0,'ვადის დადგომისას']];
@@ -243,7 +243,8 @@ function settingsPage(){
 const A={
   tab:d=>{S.tab=d.v;authView()},logout:()=>logout(),toggleTheme:()=>setTheme(isDark()?'light':'dark'),theme:d=>setTheme(d.v),
   closeDlg:()=>$('#dlg').close(),newDoc:()=>docDialog(),newUser:()=>userDialog(),
-  editDoc:d=>docDialog(S.docs.find(x=>x.id==d.id)),goHist:()=>{location.hash='#/history'},
+  editDoc:d=>docDialog(S.docs.find(x=>x.id==d.id)),done:guard(async d=>{await api(`/documents/${d.id}/done`,'PUT',{done:true});await load();renderList();toast('გადავიდა ისტორიაში')}),
+  goHist:()=>{location.hash='#/history'},
   restore:guard(async d=>{await api(`/documents/${d.id}/done`,'PUT',{done:false});await load();const x=S.docs.find(y=>y.id==d.id);location.hash='#/dashboard';route();toast('დავალება აღდგა');if(x&&ms(x.deadline)<0){ppDialog(x);toast('ვადა გასულია, აირჩიე ახალი ვადა')}}),
   notify:guard(async d=>{sendSummary((await api(`/documents/${d.id}/notify`,'POST',{})).results)}),postpone:d=>ppDialog(S.docs.find(x=>x.id==d.id)),
   pp:guard(async d=>{const x=S.docs.find(y=>y.id==d.id);await api(`/documents/${d.id}/deadline`,'PUT',{deadline:new Date(Math.max(new Date(x.deadline).getTime(),Date.now())+d.m*6e4).toISOString()});$('#dlg').close();await load();route();toast('ვადა გადაიდო')}),
