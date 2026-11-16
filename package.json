@@ -1,6 +1,10 @@
 {
   "name": "reminder-frontend",
   "version": "1.0.0",
-  "scripts": { "start": "node write-config.js && serve -s . -l $PORT" },
-  "dependencies": { "serve": "^14.2.3" }
+  "scripts": {
+    "start": "node write-config.js && serve . -l $PORT"
+  },
+  "dependencies": {
+    "serve": "^14.2.3"
+  }
 }
