@@ -1,9 +1,15 @@
-# APA Reminder: frontend
-ადმინის/მომხმარებლის პანელი. Root Directory არ სჭირდება.
+# APA Reminder: frontend (React + Vite)
+
+- React 18, Vite, socket.io-client (მყისიერი განახლება ყველა ღია ფანჯარაში).
+- გვერდები: დაფა, ისტორია, მომხმარებლები (ადმინი), პარამეტრები; ღია/მუქი თემა.
+- `public/tg.html`: Telegram Mini App ფორმა (ბოტის `/new`), შესვლის გარეშე.
 
 ## Railway
-New → GitHub Repo → ეს repo. Variables:
+New → GitHub Repo → ეს repo. Variables: `API_URL=https://<backend-domain>`. Railway თავისით აკეთებს `npm run build` და `npm start`.
+`API_URL` გაშვებისას იკითხება (`write-config.cjs`), ამიტომ შეცვლის შემდეგ საკმარისია Redeploy.
+
+## ლოკალურად
 ```
-API_URL=https://<backend-domain>
+npm install
+npm run dev        # http://localhost:5173 (API: http://localhost:3000)
 ```
-Settings → Networking → Generate Domain. API_URL-ის შეცვლის შემდეგ Redeploy.

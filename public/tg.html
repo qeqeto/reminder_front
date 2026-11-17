@@ -31,6 +31,8 @@ button:disabled{opacity:.5}.msg{margin-top:12px;min-height:22px;color:var(--bad)
   <p class="hint">ნაგულისხმევი: ახლიდან 10 დღე</p>
   <label class="t">შეხსენების დრო</label>
   <div class="grid" id="rem"></div>
+  <label class="t" for="dtime">ყოველდღიური შეხსენება</label>
+  <div class="grid"><label class="opt"><input type="checkbox" id="daily" checked>ყოველდღე</label><input id="dtime" type="time" value="10:00" style="min-height:46px;padding:10px 12px;border-radius:10px;border:1px solid transparent;background:var(--card);color:var(--ink);font:inherit"></div>
   <label class="t">ვის დაევალოს</label>
   <div class="grid" id="ppl"></div>
   <label class="opt" style="margin-top:14px"><input type="checkbox" id="notify">შექმნისთანავე გაუგზავნე შეტყობინება</label>
@@ -41,7 +43,7 @@ button:disabled{opacity:.5}.msg{margin-top:12px;min-height:22px;color:var(--bad)
 const tg=window.Telegram&&window.Telegram.WebApp;if(tg){tg.ready();tg.expand()}
 const initData=tg?tg.initData:'',BASE=(window.API_URL||'').replace(/\/+$/,''),$=s=>document.querySelector(s);
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const REM=[[10080,'7 დღით ადრე'],[4320,'3 დღით ადრე'],[1440,'1 დღით ადრე'],[120,'2 საათით ადრე'],[60,'1 საათით ადრე'],[0,'ვადის დადგომისას']],DEF=[4320,1440,60,0];
+const REM=[[10080,'7 დღით ადრე'],[4320,'3 დღით ადრე'],[1440,'1 დღით ადრე'],[120,'2 საათით ადრე'],[60,'1 საათით ადრე'],[0,'ვადის დადგომისას']],DEF=[60,0];
 const pad=n=>String(n).padStart(2,'0'),toInput=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 async function call(p,b){let r;try{r=await fetch(BASE+'/api/tg/'+p,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({initData,...b})})}catch{throw new Error('სერვერთან კავშირი ვერ მოხერხდა')}
   const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.error||'შეცდომა');return j}
@@ -50,6 +52,7 @@ async function call(p,b){let r;try{r=await fetch(BASE+'/api/tg/'+p,{method:'POST
   try{
     const d=await call('form',{});
     $('#dl').value=toInput(new Date(Date.now()+10*864e5));
+    $('#dtime').value=(d.defaults&&d.defaults.daily_time)||'10:00';
     $('#rem').innerHTML=REM.map(([n,t])=>`<label class="opt"><input type="checkbox" name="rd" value="${n}" ${DEF.includes(n)?'checked':''}>${t}</label>`).join('');
     $('#ppl').innerHTML=d.users.map(u=>`<label class="opt"><input type="checkbox" name="u" value="${u.id}" ${u.id===d.me.id?'checked':''}>${esc(u.name)}</label>`).join('');
     $('#f').hidden=false;
@@ -60,7 +63,7 @@ $('#f').addEventListener('submit',async e=>{
   try{
     const r=await call('documents',{title:$('#title').value,deadline:new Date($('#dl').value).toISOString(),
       remind_mins:[...document.querySelectorAll('[name=rd]:checked')].map(x=>+x.value),
-      user_ids:[...document.querySelectorAll('[name=u]:checked')].map(x=>+x.value),notify:$('#notify').checked});
+      user_ids:[...document.querySelectorAll('[name=u]:checked')].map(x=>+x.value),notify:$('#notify').checked,daily:$('#daily').checked,daily_time:$('#dtime').value});
     if(tg&&tg.HapticFeedback)tg.HapticFeedback.notificationOccurred('success');
     $('#f').hidden=true;const ok=(r.results||[]).filter(x=>x.ok).length;
     $('#msg').style.color='var(--ink)';$('#msg').textContent='დავალება შეიქმნა ✅'+(r.results?` (გაიგზავნა: ${ok})`:'');

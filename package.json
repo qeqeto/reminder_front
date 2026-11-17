@@ -1,10 +1,21 @@
 {
-  "name": "reminder-frontend",
-  "version": "1.0.0",
+  "name": "apa-reminder-frontend",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
   "scripts": {
-    "start": "node write-config.js && serve public -l $PORT"
+    "dev": "vite",
+    "build": "vite build",
+    "start": "node write-config.cjs && serve dist -l $PORT"
   },
   "dependencies": {
-    "serve": "^14.2.3"
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "serve": "^14.2.3",
+    "socket.io-client": "^4.7.5"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.1",
+    "vite": "^5.4.0"
   }
 }
